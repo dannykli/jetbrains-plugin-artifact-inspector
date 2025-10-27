@@ -2,7 +2,6 @@ package org.example
 
 import java.io.File
 import java.util.zip.ZipFile
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 
@@ -26,12 +25,7 @@ class ArtifactParser(val filename: String) {
     }
 
     fun writeTo(filename: String) {
-        val jsonString = json.encodeToString(artifact.entries)
+        val jsonString = json.encodeToString(artifact)
         File(filename).writeText(jsonString)
     }
 }
-
-data class ArtifactInfo(val name: String, val entries: List<ArtifactEntry>)
-
-@Serializable
-data class ArtifactEntry(val name: String, val crc: Long, val size: Long, val time: Long, val isDirectory: Boolean)

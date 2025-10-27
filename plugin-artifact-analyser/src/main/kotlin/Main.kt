@@ -33,6 +33,10 @@ fun main(args: Array<String>) {
             // TODO: call validate file path function
             println("Comparing $file1 and $file2 ...")
             // TODO: Call your comparison function here
+            // use filesize and crc to reduce chance of false positive
+            val artifactComparer = ArtifactComparer(file1, file2)
+            artifactComparer.writeToTerminal()
+            artifactComparer.writeToJson()
         }
 
         else -> {
