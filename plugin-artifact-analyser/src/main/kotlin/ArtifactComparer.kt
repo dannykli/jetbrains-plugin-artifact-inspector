@@ -17,6 +17,7 @@ class ArtifactComparer(val file1: String, val file2: String) {
     private val artifact1: ArtifactInfo
     private val artifact2: ArtifactInfo
     private val comparisonInfo: ArtifactComparison
+    private var ignoredFiles: List<ArtifactEntry> = mutableListOf()
 
     init {
         artifact1 = readFile(file1)
@@ -43,16 +44,39 @@ class ArtifactComparer(val file1: String, val file2: String) {
         val renamedFiles: MutableList<ArtifactEntry> = mutableListOf()
 
         val artifact1Filenames = artifact1.entries.map(ArtifactEntry::name).toSet()
+
         val artifact1Files: MutableMap<FileKey, ArtifactEntry> = mutableMapOf()
         val artifact1Dirs: MutableMap<String, ArtifactEntry> = mutableMapOf()
+
+        // need to check in case two entries have same file key
+        val duplicateFiles1: MutableList<ArtifactEntry> = mutableListOf()
 
         for (entry in artifact1.entries) {
             if (entry.isDirectory) {
                 artifact1Dirs[entry.name] = entry
             } else {
-                artifact1Files[FileKey(entry.crc, entry.size)] = entry
+                val key = FileKey(entry.crc, entry.size)
+                if (artifact1Files.containsKey(key)) {
+                    duplicateFiles1.add(entry)
+                    continue
+                }
+                artifact1Files[key] = entry
             }
         }
+        val duplicateFiles2: MutableList<ArtifactEntry> = mutableListOf()
+        val artifact2Keys: MutableSet<FileKey> = mutableSetOf()
+
+        for (entry in artifact2.entries) {
+            if (!entry.isDirectory) {
+                val key = FileKey(entry.crc, entry.size)
+                if (artifact2Keys.contains(key)) {
+                    duplicateFiles2.add(entry)
+                }
+                artifact2Keys.add(key)
+            }
+        }
+
+        this.ignoredFiles = duplicateFiles1 + duplicateFiles2
 
         for (entry in artifact2.entries) {
             if (entry.isDirectory) {
@@ -63,6 +87,9 @@ class ArtifactComparer(val file1: String, val file2: String) {
                     addedDirs.add(entry)
                 }
             } else {
+                if (duplicateFiles2.contains(entry)) {
+                    continue
+                }
                 val commonArtifact1File = artifact1Files[FileKey(entry.crc, entry.size)]
                 if (commonArtifact1File != null) {
                     if (commonArtifact1File.name == entry.name) {
@@ -130,6 +157,12 @@ class ArtifactComparer(val file1: String, val file2: String) {
         println("  - Removed directories: ${comparisonInfo.removedDirs.size}")
         println("  - Changed files: ${comparisonInfo.changedFiles.size}")
         println("  - Renamed files: ${comparisonInfo.renamedFiles.size}")
+
+        if (ignoredFiles.isNotEmpty()) {
+            println()
+            println("Comparison ignored these files: ${ignoredFiles}")
+        }
+
         println()
         println("Similarity score: ${"%.1f".format(calculateSimilarityScore())}%")
         println()
