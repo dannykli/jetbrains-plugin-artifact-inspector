@@ -9,8 +9,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-typealias Crc = Long
-typealias FileSize = Long
 
 class ArtifactComparer(val file1: String, val file2: String) {
     private val json = Json { ignoreUnknownKeys = true }
@@ -31,100 +29,89 @@ class ArtifactComparer(val file1: String, val file2: String) {
     }
 
     fun compare(): ArtifactComparison {
+        // warning: The correctness of this function relies on each file's file key being unique, specifically that
+        //   the following holds:
+        //      file A and file B have same file key (crc, size) ==> file A and B have the same contents
+        // Whilst this is not guaranteed to be true, it is extremely likely that the above holds in practical scenarios
+
         // Artifact comparison variables
         val artifact1Summary = summariseArtifact(artifact1)
         val artifact2Summary = summariseArtifact(artifact2)
         val commonFiles: MutableList<ArtifactEntry> = mutableListOf()
-        val commonDirs: MutableList<ArtifactEntry> = mutableListOf()
         val addedFiles: MutableList<ArtifactEntry> = mutableListOf()
-        val addedDirs: MutableList<ArtifactEntry> = mutableListOf()
-        val removedFiles: MutableList<ArtifactEntry> = mutableListOf()
-        val removedDirs: MutableList<ArtifactEntry> = mutableListOf()
         val changedFiles: MutableList<ArtifactEntry> = mutableListOf()
         val renamedFiles: MutableList<ArtifactEntry> = mutableListOf()
+        val removedFiles: List<ArtifactEntry>
 
         val artifact1Filenames = artifact1.entries.map(ArtifactEntry::name).toSet()
 
         val artifact1Files: MutableMap<FileKey, ArtifactEntry> = mutableMapOf()
-        val artifact1Dirs: MutableMap<String, ArtifactEntry> = mutableMapOf()
 
-        // need to check in case two entries have same file key
+        // In the rare case that two different files have the same file key, we must keep track of these
+        //   to avoid overwriting the first file. It is so rare that we are okay to ignore them in this case.
         val duplicateFiles1: MutableList<ArtifactEntry> = mutableListOf()
 
         for (entry in artifact1.entries) {
-            if (entry.isDirectory) {
-                artifact1Dirs[entry.name] = entry
-            } else {
                 val key = FileKey(entry.crc, entry.size)
                 if (artifact1Files.containsKey(key)) {
                     duplicateFiles1.add(entry)
                     continue
                 }
                 artifact1Files[key] = entry
-            }
         }
+
+        // Again, we do the same to check for multiple files with the same file key
         val duplicateFiles2: MutableList<ArtifactEntry> = mutableListOf()
         val artifact2Keys: MutableSet<FileKey> = mutableSetOf()
 
         for (entry in artifact2.entries) {
-            if (!entry.isDirectory) {
-                val key = FileKey(entry.crc, entry.size)
-                if (artifact2Keys.contains(key)) {
-                    duplicateFiles2.add(entry)
-                }
-                artifact2Keys.add(key)
+            val key = FileKey(entry.crc, entry.size)
+            if (artifact2Keys.contains(key)) {
+                duplicateFiles2.add(entry)
             }
+            artifact2Keys.add(key)
         }
 
         this.ignoredFiles = duplicateFiles1 + duplicateFiles2
 
+        val originalNamesOfRenamedFiles = mutableSetOf<String>()
+
         for (entry in artifact2.entries) {
-            if (entry.isDirectory) {
-                if (artifact1Dirs.containsKey(entry.name)) {
-                    commonDirs.add(entry)
-                    artifact1Dirs.remove(entry.name)
+            if (duplicateFiles2.contains(entry)) {
+                continue
+            }
+            val commonArtifact1File = artifact1Files[FileKey(entry.crc, entry.size)]
+            if (commonArtifact1File != null) {
+                if (commonArtifact1File.name == entry.name) {
+                    // File is same in artifact 2 as in artifact 1 with same name
+                    commonFiles.add(entry)
                 } else {
-                    addedDirs.add(entry)
+                    // File is same in artifact 2 as in artifact 1 with different names
+                    renamedFiles.add(entry)
+                    originalNamesOfRenamedFiles.add(commonArtifact1File.name)
                 }
             } else {
-                if (duplicateFiles2.contains(entry)) {
-                    continue
-                }
-                val commonArtifact1File = artifact1Files[FileKey(entry.crc, entry.size)]
-                if (commonArtifact1File != null) {
-                    if (commonArtifact1File.name == entry.name) {
-                        commonFiles.add(entry)
-                    } else {
-                        renamedFiles.add(entry)
-                    }
-                    artifact1Files.remove(FileKey(entry.crc, entry.size))
+                if (artifact1Filenames.contains(entry.name)) {
+                    // Filename exists in artifact 1 but not same contents
+                    changedFiles.add(entry)
                 } else {
-                    if (artifact1Filenames.contains(entry.name)) {
-                        changedFiles.add(entry)
-                    } else {
-                        addedFiles.add(entry)
-                    }
+                    // New file
+                    addedFiles.add(entry)
                 }
             }
         }
 
-        for ((_, entry) in artifact1Dirs) {
-            removedDirs.add(entry)
-        }
-
-        for ((_, entry) in artifact1Files) {
-            removedFiles.add(entry)
-        }
+        // Left-over files in artifact1 that were not found in artifact2 and not renamed
+        val artifact2Filenames = artifact2.entries.map(ArtifactEntry::name).toSet()
+        val notRemovedFiles = artifact2Filenames + originalNamesOfRenamedFiles
+        removedFiles = artifact1.entries.filter { !notRemovedFiles.contains(it.name) }
 
         return ArtifactComparison (
             artifact1Summary,
             artifact2Summary,
             commonFiles,
-            commonDirs,
             addedFiles,
-            addedDirs,
             removedFiles,
-            removedDirs,
             changedFiles,
             renamedFiles
         )
@@ -136,31 +123,25 @@ class ArtifactComparer(val file1: String, val file2: String) {
         println()
         println("Artifact A: ${comparisonInfo.artifact1.name}")
         println("  Files: ${comparisonInfo.artifact1.noOfFiles}")
-        println("  Directories: ${comparisonInfo.artifact1.noOfDirs}")
         println("  Size: ${comparisonInfo.artifact1.totalSize}B")
         println("  Last modified: ${formatEntryTime(comparisonInfo.artifact1.lastModified)}")
         println()
         println("Artifact B: ${comparisonInfo.artifact2.name}")
         println("  Files: ${comparisonInfo.artifact2.noOfFiles}")
-        println("  Directories: ${comparisonInfo.artifact2.noOfDirs}")
         println("  Size: ${comparisonInfo.artifact2.totalSize}B")
         println("  Last modified: ${formatEntryTime(comparisonInfo.artifact2.lastModified)}")
         println()
-        println("Common entries: ${comparisonInfo.commonFiles.size + comparisonInfo.commonDirs.size}")
-        println("  - Files in common: ${comparisonInfo.commonFiles.size}")
-        println("  - Directories in common: ${comparisonInfo.commonDirs.size}")
+        println("Files in common: ${comparisonInfo.commonFiles.size}")
         println()
         println("Differences:")
         println("  - Added files: ${comparisonInfo.addedFiles.size}")
-        println("  - Added directories: ${comparisonInfo.addedDirs.size}")
         println("  - Removed files: ${comparisonInfo.removedFiles.size}")
-        println("  - Removed directories: ${comparisonInfo.removedDirs.size}")
         println("  - Changed files: ${comparisonInfo.changedFiles.size}")
         println("  - Renamed files: ${comparisonInfo.renamedFiles.size}")
 
         if (ignoredFiles.isNotEmpty()) {
             println()
-            println("Comparison ignored these files: ${ignoredFiles}")
+            println("Comparison ignored these files: ${ignoredFiles.joinToString { it.name }}")
         }
 
         println()
@@ -182,26 +163,24 @@ class ArtifactComparer(val file1: String, val file2: String) {
     }
 
     private fun calculateSimilarityScore(): Double {
-        val totalEntries = artifact1.entries.size + artifact2.entries.size
-        val commonEntries = comparisonInfo.commonFiles.size + comparisonInfo.commonDirs.size
-        return (commonEntries.toDouble() / totalEntries.toDouble()) * 100
+        val totalFiles = comparisonInfo.commonFiles.size +
+                comparisonInfo.addedFiles.size +
+                comparisonInfo.removedFiles.size +
+                comparisonInfo.changedFiles.size +
+                comparisonInfo.renamedFiles.size
+        val weightedRenamed = 0.9 * comparisonInfo.renamedFiles.size
+        val common = comparisonInfo.commonFiles.size
+        return ((common + weightedRenamed) / totalFiles.toDouble()) * 100
     }
 
     private fun summariseArtifact(artifact: ArtifactInfo): ArtifactSummary {
-        var noOfFiles = 0
-        var noOfDirs = 0
         var totalSize: Long = 0
         var lastModified: Long = 0
         for (entry in artifact.entries) {
-            if (entry.isDirectory) {
-                noOfDirs++
-            } else {
-                noOfFiles++
-                totalSize += entry.size
-            }
+            totalSize += entry.size
             lastModified = max(lastModified, entry.time)
         }
-        return ArtifactSummary(artifact.name, noOfFiles, noOfDirs, totalSize, lastModified)
+        return ArtifactSummary(artifact.name, artifact.entries.size, totalSize, lastModified)
     }
 }
 
@@ -210,22 +189,16 @@ data class ArtifactComparison(
     val artifact1: ArtifactSummary,  // simple summary of artifact 1
     val artifact2: ArtifactSummary,  // simple summary of artifact 2
     val commonFiles: List<ArtifactEntry>,  // files that are in both
-    val commonDirs: List<ArtifactEntry>,   // dirs that are in both
     val addedFiles: List<ArtifactEntry>,   // files in artifact 2 but not artifact 1
-    val addedDirs: List<ArtifactEntry>,    // files in artifact 2 but not artifact 1
     val removedFiles: List<ArtifactEntry>, // files in artifact 1 but not artifact 2
-    val removedDirs: List<ArtifactEntry>,  // dirs in artifact 1 but not artifact 2
     val changedFiles: List<ArtifactEntry>, // files that have same names in both but different contents
     val renamedFiles: List<ArtifactEntry>, // files that have same contents in both but different names
 )
-
-// Print to terminal length of the above arrays, and in a summary .json file actually have the list of files
 
 @Serializable
 data class ArtifactSummary(
     val name: String,
     val noOfFiles: Int,
-    val noOfDirs: Int,
     val totalSize: Long,
     val lastModified: Long,
 )

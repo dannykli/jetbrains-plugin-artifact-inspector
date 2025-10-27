@@ -19,7 +19,10 @@ class ArtifactParser(val filename: String) {
         val zipEntries = ZipFile(file).entries().asSequence().toList()
         val artifactEntries: MutableList<ArtifactEntry> = mutableListOf();
         for (entry in zipEntries) {
-            artifactEntries.add(ArtifactEntry(entry.name, entry.crc, entry.size, entry.time, entry.isDirectory))
+            if (!entry.isDirectory) {
+                artifactEntries.add(ArtifactEntry(entry.name, entry.crc, entry.size, entry.time))
+            }
+
         }
         return ArtifactInfo(filename, artifactEntries)
     }
