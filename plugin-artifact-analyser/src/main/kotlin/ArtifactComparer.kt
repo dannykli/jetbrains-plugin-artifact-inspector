@@ -1,4 +1,4 @@
-package org.example
+package dannykli.pluginanalyser
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -104,7 +104,7 @@ class ArtifactComparer(val file1: String, val file2: String) {
         // Left-over files in artifact1 that were not found in artifact2 and not renamed
         val artifact2Filenames = artifact2.entries.map(ArtifactEntry::name).toSet()
         val notRemovedFiles = artifact2Filenames + originalNamesOfRenamedFiles
-        removedFiles = artifact1.entries.filter { !notRemovedFiles.contains(it.name) }
+        removedFiles = artifact1Files.values.filter { !notRemovedFiles.contains(it.name) }
 
         return ArtifactComparison (
             artifact1Summary,
@@ -152,7 +152,9 @@ class ArtifactComparer(val file1: String, val file2: String) {
     fun writeToJson() {
         println("Writing full comparison information to JSON...")
         val jsonString = json.encodeToString(comparisonInfo)
-        File("$file1-$file2-comparison.json").writeText(jsonString)
+        val outputFilename = "${File(file1).nameWithoutExtension}-${File(file2).nameWithoutExtension}-comparison.json"
+        File(outputFilename).writeText(jsonString)
+        print("View full comparison JSON at $outputFilename")
     }
 
     private fun formatEntryTime(epochMillis: Long): String {

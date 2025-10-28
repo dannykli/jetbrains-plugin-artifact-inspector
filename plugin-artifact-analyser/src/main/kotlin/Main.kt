@@ -1,4 +1,6 @@
-package org.example
+package dannykli.pluginanalyser
+
+import java.io.File
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
@@ -17,10 +19,12 @@ fun main(args: Array<String>) {
                 return
             }
             val artifactPath = args[1]
-            // TODO: call validate file path function
+            validateFilePath(artifactPath, arrayOf("jar", "zip"))
             println("Inspecting $artifactPath ...")
             val artifactParser = ArtifactParser(artifactPath)
-            artifactParser.writeTo("$artifactPath-out")
+            val directory = File(artifactPath).parent ?: "."
+            val baseName = File(artifactPath).nameWithoutExtension
+            artifactParser.writeTo("$directory/$baseName-report.json")
         }
 
         "compare" -> {
@@ -30,10 +34,8 @@ fun main(args: Array<String>) {
             }
             val file1 = args[1]
             val file2 = args[2]
-            // TODO: call validate file path function
+            validateFilePath(file1, arrayOf("json"))
             println("Comparing $file1 and $file2 ...")
-            // TODO: Call your comparison function here
-            // use filesize and crc to reduce chance of false positive
             val artifactComparer = ArtifactComparer(file1, file2)
             artifactComparer.writeToTerminal()
             artifactComparer.writeToJson()

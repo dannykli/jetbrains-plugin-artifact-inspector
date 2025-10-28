@@ -1,4 +1,4 @@
-package org.example
+package dannykli.pluginanalyser
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

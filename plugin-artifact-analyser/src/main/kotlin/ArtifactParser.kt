@@ -1,4 +1,4 @@
-package org.example
+package dannykli.pluginanalyser
 
 import java.io.File
 import java.util.zip.ZipFile
@@ -20,6 +20,7 @@ class ArtifactParser(val filename: String) {
         val artifactEntries: MutableList<ArtifactEntry> = mutableListOf();
         for (entry in zipEntries) {
             if (!entry.isDirectory) {
+
                 artifactEntries.add(ArtifactEntry(entry.name, entry.crc, entry.size, entry.time))
             }
 
@@ -28,6 +29,7 @@ class ArtifactParser(val filename: String) {
     }
 
     fun writeTo(filename: String) {
+        println("Written artifact summary to $filename")
         val jsonString = json.encodeToString(artifact)
         File(filename).writeText(jsonString)
     }

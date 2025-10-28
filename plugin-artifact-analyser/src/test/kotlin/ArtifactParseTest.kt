@@ -1,6 +1,6 @@
-package org.example
+package dannykli.pluginanalyser
 
-import kotlinx.serialization.decodeFromString
+import kotlin.io.path.createTempDirectory
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,7 +28,7 @@ class ArtifactParserTest {
 
     @Test
     fun parseZipFileCorrectly() {
-        val tempDir = createTempDir()
+        val tempDir = createTempDirectory().toFile()
         val entries = listOf("file1.txt", "file2.txt")
         val zipFile = createTestZip("test.zip", entries, tempDir)
 
@@ -44,7 +44,7 @@ class ArtifactParserTest {
 
     @Test
     fun writeToCreatesCorrectJsonFile() {
-        val tempDir = createTempDir()
+        val tempDir = createTempDirectory().toFile()
         val entries = listOf("file1.txt")
         val zipFile = createTestZip("test.zip", entries, tempDir)
 
