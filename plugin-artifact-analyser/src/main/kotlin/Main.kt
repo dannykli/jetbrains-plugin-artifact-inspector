@@ -7,20 +7,29 @@ import java.io.File
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage:")
-        println("  inspect <artifact.zip|jar>")
+        println("  analyse <artifact.zip|jar>")
         println("  compare <output1> <output2>")
+        println()
+        println("Options:")
+        println("  -v   Print detailed comparison results (e.g. duplicate files, etc.)")
         return
     }
 
+    val verbose = args.contains("-v")
+
     when (val command = args[0]) {
-        "inspect" -> {
+        "analyse" -> {
             if (args.size < 2) {
                 println("Error: Missing artifact path")
                 return
             }
             val artifactPath = args[1]
-            validateFilePath(artifactPath, arrayOf("jar", "zip"))
+
+            if (!validateFilePath(artifactPath, arrayOf("jar", "zip")))
+                return
+
             println("Inspecting $artifactPath ...")
+
             val artifactParser = ArtifactParser(artifactPath)
             val directory = File(artifactPath).parent ?: "."
             val baseName = File(artifactPath).nameWithoutExtension
@@ -28,16 +37,22 @@ fun main(args: Array<String>) {
         }
 
         "compare" -> {
-            if (args.size < 3) {
+            if (args.size < 3 || (args.size == 3 && verbose)) {
                 println("Error: Missing file paths for comparison")
                 return
             }
-            val file1 = args[1]
-            val file2 = args[2]
-            validateFilePath(file1, arrayOf("json"))
+            val file1 = if (verbose) args[2] else args[1]
+            val file2 = if (verbose) args[3] else args[2]
+
+            if (!validateFilePath(file1, arrayOf("json")))
+                return
+            if (!validateFilePath(file2, arrayOf("json")))
+                return
+
             println("Comparing $file1 and $file2 ...")
+
             val artifactComparer = ArtifactComparer(file1, file2)
-            artifactComparer.writeToTerminal()
+            artifactComparer.writeToTerminal(verbose)
             artifactComparer.writeToJson()
         }
 
