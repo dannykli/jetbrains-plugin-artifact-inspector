@@ -130,12 +130,12 @@ class ArtifactComparer(val file1: String, val file2: String) {
         println()
         println("Artifact A: ${comparisonInfo.artifact1.name}")
         println("  Files: ${comparisonInfo.artifact1.noOfFiles}")
-        println("  Size: ${comparisonInfo.artifact1.totalSize}B")
+        println("  Size: ${formatBytes(comparisonInfo.artifact1.totalSize)}")
         println("  Last modified: ${formatEntryTime(comparisonInfo.artifact1.lastModified)}")
         println()
         println("Artifact B: ${comparisonInfo.artifact2.name}")
         println("  Files: ${comparisonInfo.artifact2.noOfFiles}")
-        println("  Size: ${comparisonInfo.artifact2.totalSize}B")
+        println("  Size: ${formatBytes(comparisonInfo.artifact2.totalSize)}")
         println("  Last modified: ${formatEntryTime(comparisonInfo.artifact2.lastModified)}")
         println()
         println("Files in common: ${comparisonInfo.commonFiles.size}")
@@ -148,7 +148,7 @@ class ArtifactComparer(val file1: String, val file2: String) {
         println()
 
         if (comparisonInfo.duplicateFiles.artifact1Duplicates.isNotEmpty()) {
-            println("Note: Found ${comparisonInfo.duplicateFiles.artifact1Duplicates.size} duplicate files in artifact A"
+            println("Note: Found ${comparisonInfo.duplicateFiles.artifact1Duplicates.size} sets of duplicate files in artifact A"
                 + if (verbose) ":" else "")
             if (verbose) {
                 printDuplicateFiles(comparisonInfo.duplicateFiles.artifact1Duplicates)
@@ -157,7 +157,7 @@ class ArtifactComparer(val file1: String, val file2: String) {
         }
 
         if (comparisonInfo.duplicateFiles.artifact2Duplicates.isNotEmpty()) {
-            println("Note: Found ${comparisonInfo.duplicateFiles.artifact2Duplicates.size} duplicate files in artifact B"
+            println("Note: Found ${comparisonInfo.duplicateFiles.artifact2Duplicates.size} sets of duplicate files in artifact B"
                 + if (verbose) ":" else "")
             if (verbose) {
                 printDuplicateFiles(comparisonInfo.duplicateFiles.artifact2Duplicates)
@@ -183,9 +183,23 @@ class ArtifactComparer(val file1: String, val file2: String) {
     fun writeToJson() {
         println("Writing full comparison information to JSON...")
         val jsonString = json.encodeToString(comparisonInfo)
-        val outputFilename = "${File(file1).nameWithoutExtension}-${File(file2).nameWithoutExtension}-comparison.json"
+        val filename1 = File(file1).nameWithoutExtension.removeSuffix("-report")
+        val filename2 = File(file2).nameWithoutExtension.removeSuffix("-report")
+        val outputFilename = "$filename1-$filename2-comparison.json"
         File(outputFilename).writeText(jsonString)
         print("View full comparison JSON at $outputFilename")
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        if (bytes < 1024) return "$bytes B"
+        val units = arrayOf("B", "KB", "MB", "GB", "TB", "PB")
+        var value = bytes.toDouble()
+        var i = 0
+        while (value >= 1024 && i < units.size - 1) {
+            value /= 1024
+            i++
+        }
+        return String.format("%.2f %s", value, units[i])
     }
 
     private fun formatEntryTime(epochMillis: Long): String {
