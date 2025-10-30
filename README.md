@@ -8,19 +8,23 @@ Analyse a single plugin artifact:
 
 Compare two plugin artifacts:
   - View the total size and number of files in each plugin
-  - Find added, removed, changed and renamed files (assumption is the the two plugins being compared are different versions of the same plugin)
+  - Find added, removed, changed and renamed files (assumption is the two plugins being compared are different versions of the same plugin)
   - Show a simple similarity score to gauge how many files differ between the two versions
   - Performs comparison on two JSON files (the ones resulting from the `analyse` command)
   - Additional flag `-a` can be supplied to `compare` to directly compare two .jar/.zip artifacts in a single command
 
 ## Deployment
-Follow these command to run the CLI tool - you must have Java installed on your computer:
+Follow these commands to run the CLI tool - you must have Java installed on your computer:
 
 #### Windows
 ```
 git clone https://github.com/dannykli/jetbrains-plugin-artifact-inspector.git
 
+cd jetbrains-plugin-artifact-inspector
+
 cd plugin-artifact-analyser
+
+.\gradlew clean fatJar
 
 .\analyser.bat compare -a <plugin-artifact-file-v1> <plugin-artifact-file-v2>
 ```
@@ -29,9 +33,13 @@ cd plugin-artifact-analyser
 ```
 git clone https://github.com/dannykli/jetbrains-plugin-artifact-inspector.git
 
+cd jetbrains-plugin-artifact-inspector
+
 cd plugin-artifact-analyser
 
-.\analyser.sh compare -a <plugin-artifact-file-v1> <plugin-artifact-file-v2>
+./gradlew clean fatJar
+
+./analyser.sh compare -a <plugin-artifact-file-v1> <plugin-artifact-file-v2>
 ```
 
 ## Usage
