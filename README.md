@@ -11,6 +11,7 @@ Compare two plugin artifacts:
   - Find added, removed, changed and renamed files (assumption is the two plugins being compared are different versions of the same plugin)
   - Show a simple similarity score to gauge how many files differ between the two versions
   - Performs comparison on two JSON files (the ones resulting from the `analyse` command)
+  - Writes structured comparison information to an output JSON file
   - Additional flag `-a` can be supplied to `compare` to directly compare two .jar/.zip artifacts in a single command
 
 ## Deployment
