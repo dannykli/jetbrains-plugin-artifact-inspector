@@ -4,11 +4,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import kotlin.math.max
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
 
 class ArtifactComparer(val file1: String, val file2: String) {
     private val json = Json { ignoreUnknownKeys = true }
@@ -125,22 +120,16 @@ class ArtifactComparer(val file1: String, val file2: String) {
     }
 
     fun writeToTerminal(verbose: Boolean) {
-        val lastModifiedStr1 = if (comparisonInfo.artifact1.lastModified == 0L) "unknown" else
-            formatEntryTime(comparisonInfo.artifact1.lastModified)
-        val lastModifiedStr2 = if (comparisonInfo.artifact2.lastModified == 0L) "unknown" else
-            formatEntryTime(comparisonInfo.artifact2.lastModified)
         println("Artifact comparison summary")
         println("===========================")
         println()
         println("Artifact A: ${comparisonInfo.artifact1.name}")
         println("  Files: ${comparisonInfo.artifact1.noOfFiles}")
         println("  Size: ${formatBytes(comparisonInfo.artifact1.totalSize)}")
-        println("  Last modified: $lastModifiedStr1")
         println()
         println("Artifact B: ${comparisonInfo.artifact2.name}")
         println("  Files: ${comparisonInfo.artifact2.noOfFiles}")
         println("  Size: ${formatBytes(comparisonInfo.artifact2.totalSize)}")
-        println("  Last modified: $lastModifiedStr2")
         println()
         println("Files in common: ${comparisonInfo.commonFiles.size}")
         println()
@@ -206,13 +195,6 @@ class ArtifactComparer(val file1: String, val file2: String) {
         return String.format("%.2f %s", value, units[i])
     }
 
-    private fun formatEntryTime(epochMillis: Long): String {
-        val instant = Instant.ofEpochMilli(epochMillis)
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            .withZone(ZoneId.systemDefault())
-        return formatter.format(instant)
-    }
-
     private fun calculateSimilarityScore(): Double {
         val totalFiles = comparisonInfo.commonFiles.size +
                 comparisonInfo.addedFiles.size +
@@ -227,12 +209,10 @@ class ArtifactComparer(val file1: String, val file2: String) {
 
     private fun summariseArtifact(artifact: ArtifactInfo): ArtifactSummary {
         var totalSize: Long = 0
-        var lastModified: Long = 0
         for (entry in artifact.entries) {
             totalSize += entry.size
-            lastModified = max(lastModified, entry.time)
         }
-        return ArtifactSummary(artifact.name, artifact.entries.size, totalSize, lastModified)
+        return ArtifactSummary(artifact.name, artifact.entries.size, totalSize)
     }
 }
 
@@ -253,7 +233,6 @@ data class ArtifactSummary(
     val name: String,
     val noOfFiles: Int,
     val totalSize: Long,
-    val lastModified: Long,
 )
 
 data class FileKey(val sha256: String)

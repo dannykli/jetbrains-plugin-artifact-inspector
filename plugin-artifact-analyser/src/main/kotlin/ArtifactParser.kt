@@ -30,7 +30,7 @@ class ArtifactParser(val filename: String) {
 
                 val sha256 = getSha256Hash(inputStream, messageDigest)
 
-                artifactEntries.add(ArtifactEntry(entry.name, entry.crc, entry.size, sha256))
+                artifactEntries.add(ArtifactEntry(entry.name, entry.size, sha256))
             }
 
         }

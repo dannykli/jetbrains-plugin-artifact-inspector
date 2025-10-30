@@ -22,24 +22,24 @@ class ArtifactComparerTest {
         val artifact1 = ArtifactInfo(
             name = "artifact1.zip",
             entries = listOf(
-                ArtifactEntry("common.txt", 10, 1000, "sha1"),
-                ArtifactEntry("renamed_old.txt", 20, 2000, "sha2"),
-                ArtifactEntry("changed.txt", 30, 3000, "sha3"),
-                ArtifactEntry("removed.txt", 40, 4000, "sha4"),
-                ArtifactEntry("dup1.txt", 50, 5000, "dupHash"),
-                ArtifactEntry("dup2.txt", 50, 5000, "dupHash")
+                ArtifactEntry("common.txt", 10, "sha1"),
+                ArtifactEntry("renamed_old.txt", 20, "sha2"),
+                ArtifactEntry("changed.txt", 30, "sha3"),
+                ArtifactEntry("removed.txt", 40, "sha4"),
+                ArtifactEntry("dup1.txt", 50, "dupHash"),
+                ArtifactEntry("dup2.txt", 50, "dupHash")
             )
         )
 
         val artifact2 = ArtifactInfo(
             name = "artifact2.zip",
             entries = listOf(
-                ArtifactEntry("common.txt", 10, 1000, "sha1"), // common
-                ArtifactEntry("renamed_new.txt", 20, 2000, "sha2"), // renamed
-                ArtifactEntry("changed.txt", 30, 3000, "shaX"), // changed
-                ArtifactEntry("added.txt", 40, 5000, "sha5"), // added
-                ArtifactEntry("dupA.txt", 50, 5000, "dupHash2"),
-                ArtifactEntry("dupB.txt", 50, 5000, "dupHash2")
+                ArtifactEntry("common.txt", 10, "sha1"), // common
+                ArtifactEntry("renamed_new.txt", 20, "sha2"), // renamed
+                ArtifactEntry("changed.txt", 30, "shaX"), // changed
+                ArtifactEntry("added.txt", 40, "sha5"), // added
+                ArtifactEntry("dupA.txt", 50, "dupHash2"),
+                ArtifactEntry("dupB.txt", 50, "dupHash2")
             )
         )
 
@@ -75,23 +75,23 @@ class ArtifactComparerTest {
         }
 
         val identical = similarity(
-            ArtifactInfo("a1", listOf(ArtifactEntry("f.txt", 1, 0, "sha"))),
-            ArtifactInfo("a2", listOf(ArtifactEntry("f.txt", 1, 0, "sha")))
+            ArtifactInfo("a1", listOf(ArtifactEntry("f.txt", 1, "sha"))),
+            ArtifactInfo("a2", listOf(ArtifactEntry("f.txt", 1, "sha")))
         )
         assertEquals(100.0, identical, 0.001)
 
         val halfCommon = similarity(
             ArtifactInfo("a1", listOf(
-                ArtifactEntry("f1", 1, 0, "sha1"),
-                ArtifactEntry("f2", 1, 0, "sha2")
+                ArtifactEntry("f1", 1, "sha1"),
+                ArtifactEntry("f2", 1, "sha2")
             )),
-            ArtifactInfo("a2", listOf(ArtifactEntry("f1", 1, 0, "sha1")))
+            ArtifactInfo("a2", listOf(ArtifactEntry("f1", 1, "sha1")))
         )
         assertTrue(halfCommon < 100.0)
 
         val renamedOnly = similarity(
-            ArtifactInfo("a1", listOf(ArtifactEntry("f1", 1, 0, "sha"))),
-            ArtifactInfo("a2", listOf(ArtifactEntry("f2", 1, 0, "sha")))
+            ArtifactInfo("a1", listOf(ArtifactEntry("f1", 1, "sha"))),
+            ArtifactInfo("a2", listOf(ArtifactEntry("f2", 1, "sha")))
         )
         // renamed weight = 0.9 → 90%
         assertEquals(90.0, renamedOnly, 0.1)
@@ -99,8 +99,8 @@ class ArtifactComparerTest {
 
     @Test
     fun testWriteToJsonProducesValidFile() {
-        val artifact1 = ArtifactInfo("a1", listOf(ArtifactEntry("f1", 1, 0, "sha")))
-        val artifact2 = ArtifactInfo("a2", listOf(ArtifactEntry("f1", 1, 0, "sha")))
+        val artifact1 = ArtifactInfo("a1", listOf(ArtifactEntry("f1", 1, "sha")))
+        val artifact2 = ArtifactInfo("a2", listOf(ArtifactEntry("f1", 1, "sha")))
 
         val file1 = writeTempArtifact("a1", artifact1)
         val file2 = writeTempArtifact("a2", artifact2)
@@ -120,8 +120,8 @@ class ArtifactComparerTest {
         val artifact = ArtifactInfo(
             "a.zip",
             listOf(
-                ArtifactEntry("a", 10, 1000, "s1"),
-                ArtifactEntry("b", 20, 2000, "s2")
+                ArtifactEntry("a", 10, "s1"),
+                ArtifactEntry("b", 20, "s2")
             )
         )
         val f1 = writeTempArtifact("a1", artifact)
@@ -134,6 +134,5 @@ class ArtifactComparerTest {
 
         assertEquals(2, summary.noOfFiles)
         assertEquals(30, summary.totalSize)
-        assertEquals(2000, summary.lastModified)
     }
 }
