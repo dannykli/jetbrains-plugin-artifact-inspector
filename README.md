@@ -16,7 +16,7 @@ Compare two plugin artifacts:
 ## Deployment
 Follow these command to run the CLI tool - you must have Java installed on your computer:
 
-### Windows
+#### Windows
 ```
 git clone https://github.com/dannykli/jetbrains-plugin-artifact-inspector.git
 
@@ -25,7 +25,7 @@ cd plugin-artifact-analyser
 .\analyser.bat compare -a <plugin-artifact-file-v1> <plugin-artifact-file-v2>
 ```
 
-### Linux/MacOS
+#### Linux/MacOS
 ```
 git clone https://github.com/dannykli/jetbrains-plugin-artifact-inspector.git
 
