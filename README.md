@@ -1,7 +1,7 @@
 # Jetbrains Plugin Artifact Analyser
 A simple CLI tool to analyse and compare JetBrains plugin artifacts (.jar or .zip) to inspect their contents, detect duplicates, and compare versions.
 
-### Features
+## Features
 Analyse a single plugin artifact:
   - Parses each entry in the artifact and stores each entry inside a JSON
   - Works with .jar and .zip plugin artifacts
@@ -13,10 +13,10 @@ Compare two plugin artifacts:
   - Performs comparison on two JSON files (the ones resulting from the `analyse` command)
   - Additional flag `-a` can be supplied to `compare` to directly compare two .jar/.zip artifacts in a single command
 
-### Deployment
+## Deployment
 Follow these command to run the CLI tool - you must have Java installed on your computer:
 
-#### Windows
+### Windows
 ```
 git clone https://github.com/dannykli/jetbrains-plugin-artifact-inspector.git
 
@@ -25,7 +25,7 @@ cd plugin-artifact-analyser
 .\analyser.bat compare -a <plugin-artifact-file-v1> <plugin-artifact-file-v2>
 ```
 
-#### Linux/MacOS
+### Linux/MacOS
 ```
 git clone https://github.com/dannykli/jetbrains-plugin-artifact-inspector.git
 
@@ -34,7 +34,7 @@ cd plugin-artifact-analyser
 .\analyser.sh compare -a <plugin-artifact-file-v1> <plugin-artifact-file-v2>
 ```
 
-### Usage
+## Usage
 ```
 analyse <artifact.zip|jar>
 compare <file1> <file2>
