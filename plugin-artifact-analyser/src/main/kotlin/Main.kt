@@ -8,14 +8,16 @@ fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage:")
         println("  analyse <artifact.zip|jar>")
-        println("  compare <output1> <output2>")
+        println("  compare <file1> <file2>")
         println()
         println("Options:")
         println("  -v   Print detailed comparison results (e.g. duplicate files, etc.)")
+        println("  -a   Compare two plugin artifacts directly (analyse + compare)")
         return
     }
 
     val verbose = args.contains("-v")
+    val both = args.contains("-a")
 
     when (val command = args[0]) {
         "analyse" -> {
@@ -28,28 +30,36 @@ fun main(args: Array<String>) {
             if (!validateFilePath(artifactPath, arrayOf("jar", "zip")))
                 return
 
-            println("Inspecting $artifactPath ...")
-
-            val artifactParser = ArtifactParser(artifactPath)
-            val directory = File(artifactPath).parent ?: "."
-            val baseName = File(artifactPath).nameWithoutExtension
-            artifactParser.writeTo("$directory/$baseName-report.json")
+            analyseFile(artifactPath)
         }
 
         "compare" -> {
-            if (args.size < 3 || (args.size == 3 && verbose)) {
+            val numOptionsSpecified = (if (verbose) 1 else 0) + (if (both) 1 else 0)
+            if (args.size < 3 + numOptionsSpecified) {
                 println("Error: Missing file paths for comparison")
                 return
             }
-            val file1 = if (verbose) args[2] else args[1]
-            val file2 = if (verbose) args[3] else args[2]
+            var file1 = args[1 + numOptionsSpecified]
+            var file2 = args[2 + numOptionsSpecified]
 
-            if (!validateFilePath(file1, arrayOf("json")))
-                return
-            if (!validateFilePath(file2, arrayOf("json")))
-                return
+            if (both) {
+                if (!validateFilePath(file1, arrayOf("jar", "zip")))
+                    return
+                if (!validateFilePath(file2, arrayOf("jar", "zip")))
+                    return
+                file1 = analyseFile(file1)
+                file2 = analyseFile(file2)
+            } else {
+                if (!validateFilePath(file1, arrayOf("json")))
+                    return
+                if (!validateFilePath(file2, arrayOf("json")))
+                    return
+            }
 
-            println("Comparing $file1 and $file2 ...")
+            val filename1 = File(file1).nameWithoutExtension.removeSuffix("-report")
+            val filename2 = File(file2).nameWithoutExtension.removeSuffix("-report")
+
+            println("Comparing $filename1 and $filename2 ...")
 
             val artifactComparer = ArtifactComparer(file1, file2)
             artifactComparer.writeToTerminal(verbose)
@@ -58,7 +68,7 @@ fun main(args: Array<String>) {
 
         else -> {
             println("Unknown command: $command")
-            println("Available commands: inspect, compare")
+            println("Available commands: analyse, compare")
         }
     }
 }

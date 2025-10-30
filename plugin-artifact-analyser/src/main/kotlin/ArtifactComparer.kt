@@ -125,18 +125,22 @@ class ArtifactComparer(val file1: String, val file2: String) {
     }
 
     fun writeToTerminal(verbose: Boolean) {
+        val lastModifiedStr1 = if (comparisonInfo.artifact1.lastModified == 0L) "unknown" else
+            formatEntryTime(comparisonInfo.artifact1.lastModified)
+        val lastModifiedStr2 = if (comparisonInfo.artifact2.lastModified == 0L) "unknown" else
+            formatEntryTime(comparisonInfo.artifact2.lastModified)
         println("Artifact comparison summary")
         println("===========================")
         println()
         println("Artifact A: ${comparisonInfo.artifact1.name}")
         println("  Files: ${comparisonInfo.artifact1.noOfFiles}")
         println("  Size: ${formatBytes(comparisonInfo.artifact1.totalSize)}")
-        println("  Last modified: ${formatEntryTime(comparisonInfo.artifact1.lastModified)}")
+        println("  Last modified: $lastModifiedStr1")
         println()
         println("Artifact B: ${comparisonInfo.artifact2.name}")
         println("  Files: ${comparisonInfo.artifact2.noOfFiles}")
         println("  Size: ${formatBytes(comparisonInfo.artifact2.totalSize)}")
-        println("  Last modified: ${formatEntryTime(comparisonInfo.artifact2.lastModified)}")
+        println("  Last modified: $lastModifiedStr2")
         println()
         println("Files in common: ${comparisonInfo.commonFiles.size}")
         println()
